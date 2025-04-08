@@ -1,11 +1,12 @@
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
 import requests
+import os
 import json
 
 # ====== SETUP ======
-TELEGRAM_TOKEN = "7700561986:AAECWAioYyrU3c7xxWrGKKyWqEi_k5e9310"  # From @BotFather
-HF_API_KEY = "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"     # From Hugging Face
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")  # From @BotFather
+HF_API_KEY = os.environ.get("HF_API_KEY")     # From Hugging Face
 DEEPSEEK_API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.1"
 
 # ====== DEEPSEEK AI QUERY ======
