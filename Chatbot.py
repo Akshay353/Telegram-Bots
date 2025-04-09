@@ -58,10 +58,12 @@ def ask_deepseek(user_id, user_input):
         }
 
         response = requests.post(DEEPSEEK_API_URL, headers=headers, json=payload)
-        data = response.json()
 
         print("🌐 STATUS CODE:", response.status_code)
-        print("⚠️ RAW RESPONSE:", data)
+
+        data = response.json()
+        print("📦 RAW API RESPONSE:", data)
+
 
         # Get the bot's response
         if isinstance(data, list):
