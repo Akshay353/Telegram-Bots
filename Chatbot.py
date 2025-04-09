@@ -5,6 +5,7 @@ import json
 import os
 from flask import Flask
 import threading
+user_memory = {}
 
 app = Flask('')
 
@@ -26,15 +27,29 @@ HF_API_KEY = os.environ.get("HF_API_KEY")     # From Hugging Face
 DEEPSEEK_API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.1"
 
 # ====== DEEPSEEK AI QUERY ======
-def ask_deepseek(user_input):
+def ask_deepseek(user_id, user_input):
     try:
         headers = {"Authorization": f"Bearer {HF_API_KEY}"}
         
-        # Format the prompt to match instruction-tuned models
-        prompt = f"### Instruction:\nYou are a helpful, friendly assistant. Answer conversationally.\n\n### Input:\n{user_input}\n\n### Response:"
+        # Initialize memory if new user
+        if user_id not in user_memory:
+            user_memory[user_id] = []
+
+        # Add new user input to memory
+        user_memory[user_id].append({"role": "user", "content": user_input})
+
+        # Construct prompt using memory
+        chat_prompt = ""
+        for msg in user_memory[user_id]:
+            if msg["role"] == "user":
+                chat_prompt += f"### Input:\n{msg['content']}\n\n"
+            else:
+                chat_prompt += f"### Response:\n{msg['content']}\n\n"
+
+        chat_prompt += "### Response:"
 
         payload = {
-            "inputs": prompt,
+            "inputs": chat_prompt,
             "parameters": {
                 "temperature": 0.7,
                 "max_new_tokens": 200,
@@ -45,25 +60,20 @@ def ask_deepseek(user_input):
         response = requests.post(DEEPSEEK_API_URL, headers=headers, json=payload)
         data = response.json()
 
-        # Some models return a list of generated texts
+        # Get the bot's response
         if isinstance(data, list):
-            return data[0].get('generated_text', '⚠️ No response from model.')
-        elif isinstance(data, dict):
-            if "generated_text" in data:
-                return data["generated_text"]
-            elif "error" in data:
-                return f"❌ Error: {data['error']}"
-            elif "generated_texts" in data:
-                return data["generated_texts"][0]
-            elif "choices" in data:  # For OpenAI-style outputs
-                return data["choices"][0]["text"]
-            else:
-                return "⚠️ Unknown response structure."
+            bot_reply = data[0].get('generated_text', '⚠️ No response from model.')
+        elif "generated_text" in data:
+            bot_reply = data["generated_text"]
         else:
-            return "⚠️ Unexpected response format."
+            bot_reply = "⚠️ Unexpected format."
+
+        # Save bot reply to memory
+        user_memory[user_id].append({"role": "assistant", "content": bot_reply})
+        return bot_reply
 
     except Exception as e:
-        return f"❌ Exception occurred: {str(e)}"
+        return f"❌ Exception: {str(e)}"
 
 
 # ====== TELEGRAM BOT ======
@@ -72,11 +82,15 @@ async def start(update: Update, context):
 
 async def reply_to_user(update: Update, context):
     try:
-        await update.message.reply_text("⏳ Processing...")
-        bot_response = ask_deepseek(update.message.text)
+        user_id = update.message.from_user.id
+        user_input = update.message.text
+        await update.message.reply_text("⏳ Thinking...")
+
+        bot_response = ask_deepseek(user_id, user_input)
         await update.message.reply_text(bot_response)
+
     except Exception as e:
-        await update.message.reply_text(f"❌ Error: {str(e)}\n\nPlease try again later.")
+        await update.message.reply_text(f"❌ Error: {str(e)}")
 
 # ====== RUN THE BOT ======
 def main():
