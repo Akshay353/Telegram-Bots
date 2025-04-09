@@ -1,12 +1,27 @@
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
 import requests
-import os
 import json
+from flask import Flask
+import threading
+
+app = Flask('')
+
+@app.route('/')
+def home():
+    return "I'm alive!"
+
+def run():
+    app.run(host='0.0.0.0', port=8080)
+
+def keep_alive():
+    t = threading.Thread(target=run)
+    t.start()
+
 
 # ====== SETUP ======
-TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")  # From @BotFather
-HF_API_KEY = os.environ.get("HF_API_KEY")     # From Hugging Face
+TELEGRAM_TOKEN = "7700561986:AAECWAioYyrU3c7xxWrGKKyWqEi_k5e9310"  # From @BotFather
+HF_API_KEY = "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"     # From Hugging Face
 DEEPSEEK_API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.1"
 
 # ====== DEEPSEEK AI QUERY ======
@@ -68,6 +83,9 @@ def main():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, reply_to_user))
     app.run_polling()
+
+keep_alive()
+main()
 
 if __name__ == "__main__":
     main()
