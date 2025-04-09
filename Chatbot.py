@@ -60,13 +60,16 @@ def ask_deepseek(user_id, user_input):
         response = requests.post(DEEPSEEK_API_URL, headers=headers, json=payload)
         data = response.json()
 
+        print("🌐 STATUS CODE:", response.status_code)
+        print("⚠️ RAW RESPONSE:", data)
+
         # Get the bot's response
         if isinstance(data, list):
             bot_reply = data[0].get('generated_text', '⚠️ No response from model.')
         elif "generated_text" in data:
             bot_reply = data["generated_text"]
         else:
-            bot_reply = "⚠️ Unexpected format."
+            bot_reply = f"⚠️ Unexpected format. Raw data: {str(data)}"
 
         # Save bot reply to memory
         user_memory[user_id].append({"role": "assistant", "content": bot_reply})
