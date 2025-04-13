@@ -48,7 +48,7 @@ async def ask_gemini(user_id, user_input):
         # Send message with temperature set low for less creativity
         response = await conversation.send_message_async(
             user_input,
-            generation_config={"temperature": 0.3}  # Lower temperature for less creativity
+            generation_config={"temperature": 0.7}  # Lower temperature for less creativity
         )
         bot_reply = response.text
 
