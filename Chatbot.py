@@ -55,13 +55,13 @@ async def ask_gemini(user_id, user_input):
 
 # ====== TELEGRAM BOT ======
 async def start(update: Update, context):
-    await update.message.reply_text("👋 Hey, I'm now powered by Gemini! What's up?")
+    await update.message.reply_text("👋 Hey, Akshay here, what's up?")
 
 async def reply_to_user(update: Update, context):
     try:
         user_id = update.message.from_user.id
         user_input = update.message.text
-        await update.message.reply_text("⏳ Thinking with Gemini...")
+        await update.message.reply_text("⏳ Thinking")
 
         bot_response = await ask_gemini(user_id, user_input)
         await update.message.reply_text(bot_response)
