@@ -23,7 +23,7 @@ def keep_alive():
 
 # ====== SETUP ======
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")  # From @BotFather
-GEMINI_API_KEY = os.environ.get("AIzaSyDfQNa0mI68750raRjbgE21hdhawjXSaPI")  # From Google Cloud AI Platform or Google AI Studio
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")  # From Google Cloud AI Platform or Google AI Studio
 
 # Configure Gemini API
 genai.configure(api_key=GEMINI_API_KEY)
