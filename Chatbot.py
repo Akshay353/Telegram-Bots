@@ -27,7 +27,7 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")  # From Google Cloud AI Platfo
 
 # Configure Gemini API
 genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel('gemini-pro') # Or 'gemini-pro-vision' for multimodal
+model = genai.GenerativeModel('gemini-2.0-flash') # Or 'gemini-pro-vision' for multimodal
 
 
 # ====== GEMINI AI QUERY ======
