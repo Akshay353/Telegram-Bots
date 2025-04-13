@@ -1,10 +1,10 @@
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters
-import requests
-import json
+import google.generativeai as genai
 import os
 from flask import Flask
 import threading
+
 user_memory = {}
 
 app = Flask('')
@@ -23,58 +23,30 @@ def keep_alive():
 
 # ====== SETUP ======
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")  # From @BotFather
-HF_API_KEY = os.environ.get("HF_API_KEY")     # From Hugging Face
-DEEPSEEK_API_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.1"
+GEMINI_API_KEY = os.environ.get("AIzaSyDfQNa0mI68750raRjbgE21hdhawjXSaPI")  # From Google Cloud AI Platform or Google AI Studio
 
-# ====== DEEPSEEK AI QUERY ======
-def ask_deepseek(user_id, user_input):
+# Configure Gemini API
+genai.configure(api_key=GEMINI_API_KEY)
+model = genai.GenerativeModel('gemini-pro') # Or 'gemini-pro-vision' for multimodal
+
+
+# ====== GEMINI AI QUERY ======
+async def ask_gemini(user_id, user_input):
     try:
-        headers = {"Authorization": f"Bearer {HF_API_KEY}"}
-        
         # Initialize memory if new user
         if user_id not in user_memory:
             user_memory[user_id] = []
 
         # Add new user input to memory
-        user_memory[user_id].append({"role": "user", "content": user_input})
+        user_memory[user_id].append({"role": "user", "parts": [user_input]})
 
-        # Construct prompt using memory
-        chat_prompt = ""
-        for msg in user_memory[user_id]:
-            if msg["role"] == "user":
-                chat_prompt += f"### Input:\n{msg['content']}\n\n"
-            else:
-                chat_prompt += f"### Response:\n{msg['content']}\n\n"
-
-        chat_prompt += "### Response:"
-
-        payload = {
-            "inputs": chat_prompt,
-            "parameters": {
-                "temperature": 0.7,
-                "max_new_tokens": 200,
-                "return_full_text": False
-            }
-        }
-
-        response = requests.post(DEEPSEEK_API_URL, headers=headers, json=payload)
-
-        print("🌐 STATUS CODE:", response.status_code)
-
-        data = response.json()
-        print("📦 RAW API RESPONSE:", data)
-
-
-        # Get the bot's response
-        if isinstance(data, list):
-            bot_reply = data[0].get('generated_text', '⚠️ No response from model.')
-        elif "generated_text" in data:
-            bot_reply = data["generated_text"]
-        else:
-            bot_reply = f"⚠️ Unexpected format. Raw data: {str(data)}"
+        # Construct conversation history
+        conversation = model.start_chat(history=user_memory.get(user_id, []))
+        response = await conversation.send_message_async(user_input)
+        bot_reply = response.text
 
         # Save bot reply to memory
-        user_memory[user_id].append({"role": "assistant", "content": bot_reply})
+        user_memory[user_id].append({"role": "model", "parts": [bot_reply]})
         return bot_reply
 
     except Exception as e:
@@ -83,15 +55,15 @@ def ask_deepseek(user_id, user_input):
 
 # ====== TELEGRAM BOT ======
 async def start(update: Update, context):
-    await update.message.reply_text("👋 Hey, Akshay here. Whats up?")
+    await update.message.reply_text("👋 Hey, I'm now powered by Gemini! What's up?")
 
 async def reply_to_user(update: Update, context):
     try:
         user_id = update.message.from_user.id
         user_input = update.message.text
-        await update.message.reply_text("⏳ Thinking...")
+        await update.message.reply_text("⏳ Thinking with Gemini...")
 
-        bot_response = ask_deepseek(user_id, user_input)
+        bot_response = await ask_gemini(user_id, user_input)
         await update.message.reply_text(bot_response)
 
     except Exception as e:
